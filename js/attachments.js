@@ -5,7 +5,7 @@ import { addAttachmentMeta, removeAttachmentMeta } from "./store.js";
 import { uid, escapeHtml } from "./utils.js";
 import { showToast } from "./ui.js";
 
-const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20 MB por archivo
+const MAX_FILE_BYTES = 500 * 1024 * 1024; // 500 MB por archivo
 
 export function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -91,7 +91,7 @@ export class AttachmentsField {
   async handleFiles(fileList) {
     for (const file of Array.from(fileList)) {
       if (file.size > MAX_FILE_BYTES) {
-        showToast(`"${file.name}" supera 20 MB y no se adjuntó`);
+        showToast(`"${file.name}" supera ${formatFileSize(MAX_FILE_BYTES)} y no se adjuntó`);
         continue;
       }
       const id = uid();

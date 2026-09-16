@@ -1,9 +1,11 @@
 import { getState, addNote, updateNote, deleteNote, togglePinNote } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
-import { escapeHtml, PALETTE, colorFor } from "../utils.js";
+import { escapeHtml, PALETTE, colorFor, toISODate } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
+import { createDatePicker } from "../pickers.js";
 
 let search = "";
+let dayFilter = "";
 
 export function renderNotesView(container) {
   container.innerHTML = "";
@@ -14,6 +16,7 @@ export function renderNotesView(container) {
         <svg class="icon"><use href="#icon-search"/></svg>
         <input type="search" id="note-search" placeholder="Buscar notas..." value="${escapeHtml(search)}">
       </div>
+      <div data-slot="day-filter" style="width:180px"></div>
     </div>
     <div class="notes-grid" id="notes-grid"></div>
   `;
@@ -22,6 +25,18 @@ export function renderNotesView(container) {
     search = e.target.value;
     renderGrid(wrap.querySelector("#notes-grid"));
   });
+
+  const dayPicker = createDatePicker({
+    name: "noteDayFilter",
+    value: dayFilter,
+    placeholder: "Filtrar por día",
+    onChange: (v) => {
+      dayFilter = v;
+      renderGrid(wrap.querySelector("#notes-grid"));
+    },
+  });
+  wrap.querySelector('[data-slot="day-filter"]').replaceWith(dayPicker.el);
+
   renderGrid(wrap.querySelector("#notes-grid"));
 }
 
@@ -32,6 +47,9 @@ function getNotes() {
     const q = search.trim().toLowerCase();
     list = list.filter((n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q)));
   }
+  if (dayFilter) {
+    list = list.filter((n) => toISODate(new Date(n.updatedAt)) === dayFilter || toISODate(new Date(n.createdAt)) === dayFilter);
+  }
   list.sort((a, b) => (b.pinned - a.pinned) || (b.updatedAt - a.updatedAt));
   return list;
 }
@@ -39,7 +57,8 @@ function getNotes() {
 function renderGrid(gridEl) {
   const notes = getNotes();
   if (!notes.length) {
-    gridEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No hay notas. Crea una con "+ Nueva nota".</div>`;
+    const msg = (search.trim() || dayFilter) ? "No hay notas que coincidan con el filtro." : `No hay notas. Crea una con "+ Nueva nota".`;
+    gridEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1">${msg}</div>`;
     return;
   }
   gridEl.innerHTML = notes.map((n) => `
