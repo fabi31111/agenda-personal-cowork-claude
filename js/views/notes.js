@@ -1,6 +1,7 @@
 import { getState, addNote, updateNote, deleteNote, togglePinNote } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, PALETTE, colorFor } from "../utils.js";
+import { AttachmentsField, attachmentBadge } from "../attachments.js";
 
 let search = "";
 
@@ -50,7 +51,7 @@ function renderGrid(gridEl) {
         </button>
       </div>
       <div class="note-preview">${escapeHtml(n.content)}</div>
-      ${n.tags.length ? `<div class="note-tags">${n.tags.map((t) => `<span class="badge">#${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+      ${n.tags.length || (n.attachments || []).length ? `<div class="note-tags">${n.tags.map((t) => `<span class="badge">#${escapeHtml(t)}</span>`).join("")}${attachmentBadge(n.attachments)}</div>` : ""}
       <div class="note-date">${new Date(n.updatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</div>
     </div>
   `).join("");
@@ -99,6 +100,14 @@ export function openNoteModal(existing) {
     </div>
   `;
 
+  const attachField = new AttachmentsField({
+    mode: existing ? "edit" : "create",
+    attachments: existing?.attachments || [],
+    kind: "note",
+    entityId: existing?.id || null,
+  });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", attachField.el);
+
   openModal(existing ? "Editar nota" : "Nueva nota", form);
 
   const colorInput = form.querySelector('input[name="color"]');
@@ -122,7 +131,7 @@ export function openNoteModal(existing) {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     const tags = String(fd.get("tags") || "").split(",").map((t) => t.trim()).filter(Boolean);
@@ -136,7 +145,8 @@ export function openNoteModal(existing) {
       updateNote(existing.id, data);
       showToast("Nota actualizada");
     } else {
-      addNote(data);
+      const created = addNote(data);
+      await attachField.commitCreate("note", created.id);
       showToast("Nota creada");
     }
     closeModal();

@@ -1,6 +1,7 @@
 import { getState, addProject, updateProject, deleteProject, addTask, toggleTask, deleteTask } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, PALETTE, colorFor, relativeDayLabel } from "../utils.js";
+import { AttachmentsField, attachmentBadge } from "../attachments.js";
 
 export function renderProjectsView(container) {
   const state = getState();
@@ -31,6 +32,7 @@ function projectCardHtml(p, state) {
     <div class="project-card-head">
       <h3>${escapeHtml(p.name)}</h3>
       ${p.archived ? `<span class="badge">Archivado</span>` : ""}
+      ${attachmentBadge(p.attachments)}
     </div>
     <p>${escapeHtml(p.description || "Sin descripción")}</p>
     <div class="project-progress"><div class="project-progress-bar" style="width:${pct}%"></div></div>
@@ -68,6 +70,14 @@ export function openProjectModal(existing) {
     </div>
   `;
 
+  const attachField = new AttachmentsField({
+    mode: existing ? "edit" : "create",
+    attachments: existing?.attachments || [],
+    kind: "project",
+    entityId: existing?.id || null,
+  });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", attachField.el);
+
   openModal(existing ? "Editar proyecto" : "Nuevo proyecto", form);
 
   const colorInput = form.querySelector('input[name="color"]');
@@ -91,7 +101,7 @@ export function openProjectModal(existing) {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     const data = {
@@ -105,7 +115,8 @@ export function openProjectModal(existing) {
       updateProject(existing.id, data);
       showToast("Proyecto actualizado");
     } else {
-      addProject(data);
+      const created = addProject(data);
+      await attachField.commitCreate("project", created.id);
       showToast("Proyecto creado");
     }
     closeModal();

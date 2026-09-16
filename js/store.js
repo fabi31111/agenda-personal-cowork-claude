@@ -1,6 +1,7 @@
 // Store central con persistencia en localStorage.
 
 import { uid, todayISO } from "./utils.js";
+import { deleteFile } from "./files.js";
 
 const STORAGE_KEY = "agenda-personal-v1";
 
@@ -62,6 +63,7 @@ export function addProject(data) {
     description: data.description?.trim() || "",
     color: data.color || "violet",
     archived: false,
+    attachments: [],
     createdAt: Date.now(),
   };
   state.projects.push(project);
@@ -77,6 +79,8 @@ export function updateProject(id, patch) {
 }
 
 export function deleteProject(id) {
+  const p = state.projects.find((x) => x.id === id);
+  (p?.attachments || []).forEach((a) => deleteFile(a.id));
   state.projects = state.projects.filter((p) => p.id !== id);
   state.tasks.forEach((t) => { if (t.projectId === id) t.projectId = null; });
   notify();
@@ -94,6 +98,7 @@ export function addTask(data) {
     dueTime: data.dueTime || null,
     priority: data.priority || "normal", // low | normal | high
     projectId: data.projectId || null,
+    attachments: [],
     createdAt: Date.now(),
   };
   state.tasks.push(task);
@@ -117,6 +122,8 @@ export function toggleTask(id) {
 }
 
 export function deleteTask(id) {
+  const t = state.tasks.find((x) => x.id === id);
+  (t?.attachments || []).forEach((a) => deleteFile(a.id));
   state.tasks = state.tasks.filter((t) => t.id !== id);
   notify();
 }
@@ -133,6 +140,7 @@ export function addEvent(data) {
     endTime: data.endTime || null,
     location: data.location?.trim() || "",
     color: data.color || "violet",
+    attachments: [],
     createdAt: Date.now(),
   };
   state.events.push(event);
@@ -148,6 +156,8 @@ export function updateEvent(id, patch) {
 }
 
 export function deleteEvent(id) {
+  const e = state.events.find((x) => x.id === id);
+  (e?.attachments || []).forEach((a) => deleteFile(a.id));
   state.events = state.events.filter((e) => e.id !== id);
   notify();
 }
@@ -162,6 +172,7 @@ export function addNote(data) {
     tags: data.tags || [],
     color: data.color || "violet",
     pinned: false,
+    attachments: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
@@ -185,6 +196,8 @@ export function togglePinNote(id) {
 }
 
 export function deleteNote(id) {
+  const n = state.notes.find((x) => x.id === id);
+  (n?.attachments || []).forEach((a) => deleteFile(a.id));
   state.notes = state.notes.filter((n) => n.id !== id);
   notify();
 }
@@ -214,6 +227,31 @@ export function updateScheduleBlock(id, patch) {
 
 export function deleteScheduleBlock(id) {
   state.scheduleBlocks = state.scheduleBlocks.filter((b) => b.id !== id);
+  notify();
+}
+
+/* ---------------------------- Adjuntos ---------------------------- */
+
+const COLLECTIONS = {
+  task: () => state.tasks,
+  project: () => state.projects,
+  event: () => state.events,
+  note: () => state.notes,
+};
+
+export function addAttachmentMeta(kind, entityId, meta) {
+  const entity = COLLECTIONS[kind]().find((x) => x.id === entityId);
+  if (!entity) return;
+  if (!entity.attachments) entity.attachments = [];
+  entity.attachments.push(meta);
+  notify();
+}
+
+export function removeAttachmentMeta(kind, entityId, attachmentId) {
+  const entity = COLLECTIONS[kind]().find((x) => x.id === entityId);
+  if (!entity) return;
+  entity.attachments = (entity.attachments || []).filter((a) => a.id !== attachmentId);
+  deleteFile(attachmentId);
   notify();
 }
 

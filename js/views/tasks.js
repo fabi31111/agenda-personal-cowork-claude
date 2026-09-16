@@ -1,6 +1,7 @@
 import { getState, addTask, updateTask, deleteTask, toggleTask } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, todayISO, relativeDayLabel, isPast, PALETTE, colorFor } from "../utils.js";
+import { AttachmentsField, attachmentBadge } from "../attachments.js";
 
 let filter = "pending"; // all | pending | today | overdue | done
 let search = "";
@@ -119,6 +120,7 @@ function taskItemHtml(t, state) {
         ${t.dueDate ? `<span class="badge ${overdue ? "badge-danger" : "badge-accent"}">${relativeDayLabel(t.dueDate)}${t.dueTime ? " · " + t.dueTime : ""}</span>` : ""}
         ${priorityBadge}
         ${project ? `<span class="badge"><span class="dot" style="background:${colorFor(project.color)}"></span>${escapeHtml(project.name)}</span>` : ""}
+        ${attachmentBadge(t.attachments)}
       </div>
     </div>
     <div class="task-actions">
@@ -179,6 +181,14 @@ export function openTaskModal(existing) {
     </div>
   `;
 
+  const attachField = new AttachmentsField({
+    mode: existing ? "edit" : "create",
+    attachments: existing?.attachments || [],
+    kind: "task",
+    entityId: existing?.id || null,
+  });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", attachField.el);
+
   openModal(existing ? "Editar tarea" : "Nueva tarea", form);
 
   form.querySelector("#task-cancel").addEventListener("click", closeModal);
@@ -193,7 +203,7 @@ export function openTaskModal(existing) {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     const data = {
@@ -209,7 +219,8 @@ export function openTaskModal(existing) {
       updateTask(existing.id, data);
       showToast("Tarea actualizada");
     } else {
-      addTask(data);
+      const created = addTask(data);
+      await attachField.commitCreate("task", created.id);
       showToast("Tarea creada");
     }
     closeModal();

@@ -1,6 +1,7 @@
 import { getState, addEvent, updateEvent, deleteEvent } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, PALETTE, colorFor, relativeDayLabel, todayISO } from "../utils.js";
+import { AttachmentsField, attachmentBadge } from "../attachments.js";
 
 let filter = "upcoming"; // upcoming | past | all
 
@@ -55,6 +56,7 @@ function renderList(listEl) {
         <div class="task-meta">
           <span class="badge badge-accent">${relativeDayLabel(e.date)}${e.startTime ? " · " + e.startTime + (e.endTime ? "–" + e.endTime : "") : ""}</span>
           ${e.location ? `<span class="badge"><svg class="icon" style="width:12px;height:12px"><use href="#icon-location"/></svg> ${escapeHtml(e.location)}</span>` : ""}
+          ${attachmentBadge(e.attachments)}
         </div>
       </div>
       <div class="task-actions">
@@ -123,6 +125,14 @@ export function openEventModal(existing, prefillDate) {
     </div>
   `;
 
+  const attachField = new AttachmentsField({
+    mode: existing ? "edit" : "create",
+    attachments: existing?.attachments || [],
+    kind: "event",
+    entityId: existing?.id || null,
+  });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", attachField.el);
+
   openModal(existing ? "Editar evento" : "Nuevo evento", form);
 
   const colorInput = form.querySelector('input[name="color"]');
@@ -146,7 +156,7 @@ export function openEventModal(existing, prefillDate) {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(form);
     const data = {
@@ -163,7 +173,8 @@ export function openEventModal(existing, prefillDate) {
       updateEvent(existing.id, data);
       showToast("Evento actualizado");
     } else {
-      addEvent(data);
+      const created = addEvent(data);
+      await attachField.commitCreate("event", created.id);
       showToast("Evento creado");
     }
     closeModal();

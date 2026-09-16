@@ -291,6 +291,23 @@ input[type="checkbox"]{ width: 18px; height: 18px; accent-color: var(--accent); 
   position: relative;
 }
 .color-swatch.selected{ border-color: var(--text); }
+.attach-list{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.attach-empty{ font-size: 12px; color: var(--text-faint); padding: 6px 2px; }
+.attach-chip{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-sunken);
+  font-size: 12.5px;
+}
+.attach-name{ flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.attach-size{ color: var(--text-faint); font-size: 11px; flex-shrink: 0; }
+.attach-chip .icon-btn{ width: 26px; height: 26px; flex-shrink: 0; }
+.attach-upload{ cursor: pointer; display: inline-flex; }
+
 .color-swatch.selected::after{
   content: "";
   position: absolute; inset: -4px;

@@ -1,4 +1,4 @@
-const CACHE_NAME = "agenda-personal-v1";
+const CACHE_NAME = "agenda-personal-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,8 @@ const APP_SHELL = [
   "./js/store.js",
   "./js/ui.js",
   "./js/utils.js",
+  "./js/files.js",
+  "./js/attachments.js",
   "./js/views/today.js",
   "./js/views/tasks.js",
   "./js/views/projects.js",
