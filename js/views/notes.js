@@ -1,0 +1,145 @@
+import { getState, addNote, updateNote, deleteNote, togglePinNote } from "../store.js";
+import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
+import { escapeHtml, PALETTE, colorFor } from "../utils.js";
+
+let search = "";
+
+export function renderNotesView(container) {
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `
+    <div class="filter-bar">
+      <div class="search-box">
+        <svg class="icon"><use href="#icon-search"/></svg>
+        <input type="search" id="note-search" placeholder="Buscar notas..." value="${escapeHtml(search)}">
+      </div>
+    </div>
+    <div class="notes-grid" id="notes-grid"></div>
+  `;
+  container.appendChild(wrap);
+  wrap.querySelector("#note-search").addEventListener("input", (e) => {
+    search = e.target.value;
+    renderGrid(wrap.querySelector("#notes-grid"));
+  });
+  renderGrid(wrap.querySelector("#notes-grid"));
+}
+
+function getNotes() {
+  const state = getState();
+  let list = [...state.notes];
+  if (search.trim()) {
+    const q = search.trim().toLowerCase();
+    list = list.filter((n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q)));
+  }
+  list.sort((a, b) => (b.pinned - a.pinned) || (b.updatedAt - a.updatedAt));
+  return list;
+}
+
+function renderGrid(gridEl) {
+  const notes = getNotes();
+  if (!notes.length) {
+    gridEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No hay notas. Crea una con "+ Nueva nota".</div>`;
+    return;
+  }
+  gridEl.innerHTML = notes.map((n) => `
+    <div class="note-card" style="--note-color:${colorFor(n.color)}" data-note="${n.id}">
+      <div class="note-card-head">
+        <h3>${escapeHtml(n.title)}</h3>
+        <button class="icon-btn" data-pin="${n.id}" style="${n.pinned ? "color:var(--accent)" : ""}">
+          <svg class="icon" style="width:16px;height:16px"><use href="#icon-pin"/></svg>
+        </button>
+      </div>
+      <div class="note-preview">${escapeHtml(n.content)}</div>
+      ${n.tags.length ? `<div class="note-tags">${n.tags.map((t) => `<span class="badge">#${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+      <div class="note-date">${new Date(n.updatedAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</div>
+    </div>
+  `).join("");
+
+  gridEl.querySelectorAll("[data-note]").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("[data-pin]")) return;
+      openNoteModal(notes.find((n) => n.id === card.dataset.note));
+    });
+  });
+  gridEl.querySelectorAll("[data-pin]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      togglePinNote(btn.dataset.pin);
+      renderGrid(gridEl);
+    });
+  });
+}
+
+export function openNoteModal(existing) {
+  const form = document.createElement("form");
+  form.innerHTML = `
+    <div class="field">
+      <label>Título</label>
+      <input type="text" name="title" value="${escapeHtml(existing?.title || "")}" placeholder="Título de la nota">
+    </div>
+    <div class="field">
+      <label>Contenido</label>
+      <textarea name="content" rows="7" placeholder="Escribe aquí...">${escapeHtml(existing?.content || "")}</textarea>
+    </div>
+    <div class="field">
+      <label>Etiquetas (separadas por coma)</label>
+      <input type="text" name="tags" value="${escapeHtml((existing?.tags || []).join(", "))}" placeholder="ideas, trabajo...">
+    </div>
+    <div class="field">
+      <label>Color</label>
+      <div class="color-picker" id="color-picker">
+        ${PALETTE.map((c) => `<span class="color-swatch ${((existing?.color || "violet") === c.id) ? "selected" : ""}" data-color="${c.id}" style="background:${c.value}"></span>`).join("")}
+      </div>
+      <input type="hidden" name="color" value="${existing?.color || "violet"}">
+    </div>
+    <div class="modal-footer">
+      ${existing ? `<button type="button" class="btn btn-danger" id="note-delete" style="margin-right:auto">Eliminar</button>` : ""}
+      <button type="button" class="btn" id="note-cancel">Cancelar</button>
+      <button type="submit" class="btn btn-primary">${existing ? "Guardar" : "Crear nota"}</button>
+    </div>
+  `;
+
+  openModal(existing ? "Editar nota" : "Nueva nota", form);
+
+  const colorInput = form.querySelector('input[name="color"]');
+  form.querySelectorAll(".color-swatch").forEach((sw) => {
+    sw.addEventListener("click", () => {
+      form.querySelectorAll(".color-swatch").forEach((s) => s.classList.remove("selected"));
+      sw.classList.add("selected");
+      colorInput.value = sw.dataset.color;
+    });
+  });
+
+  form.querySelector("#note-cancel").addEventListener("click", closeModal);
+  if (existing) {
+    form.querySelector("#note-delete").addEventListener("click", () => {
+      confirmAction("¿Eliminar esta nota?", () => {
+        deleteNote(existing.id);
+        closeModal();
+        showToast("Nota eliminada");
+        document.dispatchEvent(new CustomEvent("app:refresh"));
+      });
+    });
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const tags = String(fd.get("tags") || "").split(",").map((t) => t.trim()).filter(Boolean);
+    const data = {
+      title: fd.get("title") || "Sin título",
+      content: fd.get("content") || "",
+      tags,
+      color: fd.get("color"),
+    };
+    if (existing) {
+      updateNote(existing.id, data);
+      showToast("Nota actualizada");
+    } else {
+      addNote(data);
+      showToast("Nota creada");
+    }
+    closeModal();
+    document.dispatchEvent(new CustomEvent("app:refresh"));
+  });
+}
