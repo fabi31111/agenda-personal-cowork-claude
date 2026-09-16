@@ -1,5 +1,5 @@
-import { getState, subscribe, seedIfEmpty, setTheme } from "./store.js";
-import { qs, qsa, todayISO, isoWeekday } from "./utils.js";
+import { getState, subscribe, seedIfEmpty } from "./store.js";
+import { qs, qsa, todayISO, isoWeekday, colorFor } from "./utils.js";
 import { renderTodayView } from "./views/today.js";
 import { renderTasksView, openTaskModal } from "./views/tasks.js";
 import { renderProjectsView, openProjectModal } from "./views/projects.js";
@@ -7,6 +7,7 @@ import { renderEventsView, openEventModal } from "./views/events.js";
 import { renderNotesView, openNoteModal } from "./views/notes.js";
 import { renderCalendarView } from "./views/calendar.js";
 import { renderScheduleView, openBlockModal } from "./views/schedule.js";
+import { openSettingsModal } from "./views/settings.js";
 
 seedIfEmpty();
 
@@ -82,6 +83,7 @@ function switchView(id) {
 qsa(".nav-item").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
+qs("#settings-btn").addEventListener("click", openSettingsModal);
 
 subscribe(() => renderCurrentView());
 document.addEventListener("app:refresh", () => renderCurrentView());
@@ -89,7 +91,7 @@ document.addEventListener("app:refresh-silent", () => {});
 
 renderCurrentView();
 
-/* ---------------------------------- Tema ---------------------------------- */
+/* ---------------------------------- Apariencia ---------------------------------- */
 
 function applyTheme() {
   const theme = getState().theme;
@@ -100,19 +102,16 @@ function applyTheme() {
   }
 }
 
-function systemPrefersDark() {
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+function applyAccentColor() {
+  const hex = colorFor(getState().accentColor);
+  document.documentElement.style.setProperty("--accent", hex);
+  qs('meta[name="theme-color"]')?.setAttribute("content", hex);
 }
 
-qs("#theme-toggle").addEventListener("click", () => {
-  const current = getState().theme;
-  const effectiveDark = current === "dark" || (current === "auto" && systemPrefersDark());
-  setTheme(effectiveDark ? "light" : "dark");
-  applyTheme();
-});
-
 subscribe(applyTheme);
+subscribe(applyAccentColor);
 applyTheme();
+applyAccentColor();
 
 /* ---------------------------------- Service worker ---------------------------------- */
 

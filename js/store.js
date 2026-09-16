@@ -8,6 +8,7 @@ const STORAGE_KEY = "agenda-personal-v1";
 const DEFAULT_STATE = {
   version: 1,
   theme: "auto", // "light" | "dark" | "auto"
+  accentColor: "violet",
   projects: [],
   tasks: [],
   events: [],
@@ -51,6 +52,11 @@ export function getState() {
 
 export function setTheme(theme) {
   state.theme = theme;
+  notify();
+}
+
+export function setAccentColor(colorId) {
+  state.accentColor = colorId;
   notify();
 }
 
