@@ -1,6 +1,7 @@
 import { getState, addScheduleBlock, updateScheduleBlock, deleteScheduleBlock } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, DOW_LABELS_FULL, PALETTE, colorFor, minutesToTime, timeToMinutes } from "../utils.js";
+import { createTimePicker } from "../pickers.js";
 
 const START_HOUR = 6;
 const END_HOUR = 23; // exclusivo, última franja termina a las 23:00
@@ -83,11 +84,11 @@ export function openBlockModal(existing, defaults) {
     <div class="field-row">
       <div class="field">
         <label>Hora inicio</label>
-        <input type="time" name="start" value="${minutesToTime(startMin)}" step="900">
+        <div data-slot="start"></div>
       </div>
       <div class="field">
         <label>Hora fin</label>
-        <input type="time" name="end" value="${minutesToTime(endMin)}" step="900">
+        <div data-slot="end"></div>
       </div>
     </div>
     <div class="field">
@@ -103,6 +104,11 @@ export function openBlockModal(existing, defaults) {
       <button type="submit" class="btn btn-primary">${existing ? "Guardar" : "Añadir"}</button>
     </div>
   `;
+
+  const startPicker = createTimePicker({ name: "start", value: minutesToTime(startMin), allowClear: false, minuteStep: 15 });
+  form.querySelector('[data-slot="start"]').replaceWith(startPicker.el);
+  const endPicker = createTimePicker({ name: "end", value: minutesToTime(endMin), allowClear: false, minuteStep: 15 });
+  form.querySelector('[data-slot="end"]').replaceWith(endPicker.el);
 
   openModal(existing ? "Editar actividad" : "Nueva actividad", form);
 

@@ -2,6 +2,7 @@ import { getState, addTask, updateTask, deleteTask, toggleTask } from "../store.
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, todayISO, relativeDayLabel, isPast, PALETTE, colorFor } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
+import { createDatePicker, createTimePicker } from "../pickers.js";
 
 let filter = "pending"; // all | pending | today | overdue | done
 let search = "";
@@ -130,7 +131,7 @@ function taskItemHtml(t, state) {
   </div>`;
 }
 
-export function openTaskModal(existing) {
+export function openTaskModal(existing, prefillDate) {
   const state = getState();
   const projectOptions = state.projects
     .filter((p) => !p.archived)
@@ -150,11 +151,11 @@ export function openTaskModal(existing) {
     <div class="field-row">
       <div class="field">
         <label>Fecha límite</label>
-        <input type="date" name="dueDate" value="${existing?.dueDate || ""}">
+        <div data-slot="dueDate"></div>
       </div>
       <div class="field">
         <label>Hora</label>
-        <input type="time" name="dueTime" value="${existing?.dueTime || ""}">
+        <div data-slot="dueTime"></div>
       </div>
     </div>
     <div class="field-row">
@@ -180,6 +181,11 @@ export function openTaskModal(existing) {
       <button type="submit" class="btn btn-primary">${existing ? "Guardar" : "Crear tarea"}</button>
     </div>
   `;
+
+  const dueDatePicker = createDatePicker({ name: "dueDate", value: existing?.dueDate || prefillDate || "" });
+  form.querySelector('[data-slot="dueDate"]').replaceWith(dueDatePicker.el);
+  const dueTimePicker = createTimePicker({ name: "dueTime", value: existing?.dueTime || "" });
+  form.querySelector('[data-slot="dueTime"]').replaceWith(dueTimePicker.el);
 
   const attachField = new AttachmentsField({
     mode: existing ? "edit" : "create",

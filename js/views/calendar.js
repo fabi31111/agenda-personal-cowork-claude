@@ -134,13 +134,7 @@ function openDayAgenda(iso) {
     wrap.querySelectorAll("[data-task]").forEach((elm) => {
       elm.addEventListener("click", () => openTaskModal(tasks.find((t) => t.id === elm.dataset.task)));
     });
-    wrap.querySelector("#agenda-add-task").addEventListener("click", () => {
-      openTaskModal(null);
-      setTimeout(() => {
-        const dueInput = document.querySelector('input[name="dueDate"]');
-        if (dueInput) dueInput.value = iso;
-      }, 40);
-    });
+    wrap.querySelector("#agenda-add-task").addEventListener("click", () => openTaskModal(null, iso));
     wrap.querySelector("#agenda-add-event").addEventListener("click", () => openEventModal(null, iso));
   }
 }

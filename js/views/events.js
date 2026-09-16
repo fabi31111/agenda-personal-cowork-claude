@@ -2,6 +2,7 @@ import { getState, addEvent, updateEvent, deleteEvent } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, PALETTE, colorFor, relativeDayLabel, todayISO } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
+import { createDatePicker, createTimePicker } from "../pickers.js";
 
 let filter = "upcoming"; // upcoming | past | all
 
@@ -90,17 +91,17 @@ export function openEventModal(existing, prefillDate) {
     <div class="field-row">
       <div class="field">
         <label>Fecha</label>
-        <input type="date" name="date" required value="${existing?.date || prefillDate || todayISO()}">
+        <div data-slot="date"></div>
       </div>
     </div>
     <div class="field-row">
       <div class="field">
         <label>Hora inicio</label>
-        <input type="time" name="startTime" value="${existing?.startTime || ""}">
+        <div data-slot="startTime"></div>
       </div>
       <div class="field">
         <label>Hora fin</label>
-        <input type="time" name="endTime" value="${existing?.endTime || ""}">
+        <div data-slot="endTime"></div>
       </div>
     </div>
     <div class="field">
@@ -124,6 +125,13 @@ export function openEventModal(existing, prefillDate) {
       <button type="submit" class="btn btn-primary">${existing ? "Guardar" : "Crear evento"}</button>
     </div>
   `;
+
+  const datePicker = createDatePicker({ name: "date", value: existing?.date || prefillDate || todayISO(), allowClear: false });
+  form.querySelector('[data-slot="date"]').replaceWith(datePicker.el);
+  const startTimePicker = createTimePicker({ name: "startTime", value: existing?.startTime || "" });
+  form.querySelector('[data-slot="startTime"]').replaceWith(startTimePicker.el);
+  const endTimePicker = createTimePicker({ name: "endTime", value: existing?.endTime || "" });
+  form.querySelector('[data-slot="endTime"]').replaceWith(endTimePicker.el);
 
   const attachField = new AttachmentsField({
     mode: existing ? "edit" : "create",
