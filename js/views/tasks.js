@@ -2,7 +2,7 @@ import { getState, addTask, updateTask, deleteTask, toggleTask } from "../store.
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, todayISO, relativeDayLabel, isPast, PALETTE, colorFor } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
-import { createDatePicker, createTimePicker } from "../pickers.js";
+import { createDatePicker, createTimePicker, createSelectPicker } from "../pickers.js";
 
 let filter = "pending"; // all | pending | today | overdue | done
 let search = "";
@@ -133,10 +133,6 @@ function taskItemHtml(t, state) {
 
 export function openTaskModal(existing, prefillDate) {
   const state = getState();
-  const projectOptions = state.projects
-    .filter((p) => !p.archived)
-    .map((p) => `<option value="${p.id}" ${existing?.projectId === p.id ? "selected" : ""}>${escapeHtml(p.name)}</option>`)
-    .join("");
 
   const form = document.createElement("form");
   form.innerHTML = `
@@ -169,10 +165,7 @@ export function openTaskModal(existing, prefillDate) {
       </div>
       <div class="field">
         <label>Proyecto</label>
-        <select name="projectId">
-          <option value="">Sin proyecto</option>
-          ${projectOptions}
-        </select>
+        <div data-slot="projectId"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -186,6 +179,17 @@ export function openTaskModal(existing, prefillDate) {
   form.querySelector('[data-slot="dueDate"]').replaceWith(dueDatePicker.el);
   const dueTimePicker = createTimePicker({ name: "dueTime", value: existing?.dueTime || "" });
   form.querySelector('[data-slot="dueTime"]').replaceWith(dueTimePicker.el);
+
+  const projectPicker = createSelectPicker({
+    name: "projectId",
+    value: existing?.projectId || "",
+    placeholder: "Sin proyecto",
+    options: [
+      { value: "", label: "Sin proyecto" },
+      ...state.projects.filter((p) => !p.archived).map((p) => ({ value: p.id, label: p.name, dot: colorFor(p.color) })),
+    ],
+  });
+  form.querySelector('[data-slot="projectId"]').replaceWith(projectPicker.el);
 
   const attachField = new AttachmentsField({
     mode: existing ? "edit" : "create",

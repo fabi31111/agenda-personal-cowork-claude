@@ -72,8 +72,12 @@ function renderGrid(gridEl) {
     const shown = items.slice(0, 2);
     const extra = items.length - shown.length;
 
+    const createdHere = state.tasks.some((t) => toISODate(new Date(t.createdAt)) === iso)
+      || state.events.some((e) => toISODate(new Date(e.createdAt)) === iso);
+
     html += `
       <div class="calendar-cell ${outside ? "outside" : ""} ${isToday ? "today" : ""}" data-date="${iso}">
+        ${createdHere ? `<span class="calendar-created-dot" title="Se creó una tarea o evento este día"></span>` : ""}
         <div class="calendar-daynum">${cellDate.getDate()}</div>
         <div class="chips-col">
           ${shown.map((it) => `<div class="calendar-chip" style="${it.type === "event" ? `background:${colorFor(it.color)}22;color:${colorFor(it.color)}` : ""} ${it.done ? "text-decoration:line-through;opacity:.6" : ""}">${escapeHtml(it.label)}</div>`).join("")}

@@ -404,6 +404,25 @@ input[type="checkbox"]{ width: 18px; height: 18px; accent-color: var(--accent); 
 .dt-time-opt:hover{ background: var(--bg-sunken); }
 .dt-time-opt.selected{ background: var(--accent); color: #fff; font-weight: 650; }
 
+.dt-select-content{ flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dt-select-chevron{ color: var(--text-faint); flex-shrink: 0; }
+.dt-select-list{ display: flex; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; }
+.dt-select-opt{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+  text-align: left;
+}
+.dt-select-opt:hover{ background: var(--bg-sunken); }
+.dt-select-opt.selected{ background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
 .color-swatch.selected::after{
   content: "";
   position: absolute; inset: -4px;
@@ -601,6 +620,7 @@ input[type="checkbox"]{ width: 18px; height: 18px; accent-color: var(--accent); 
   text-transform: uppercase;
 }
 .calendar-cell{
+  position: relative;
   min-height: 92px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -613,6 +633,15 @@ input[type="checkbox"]{ width: 18px; height: 18px; accent-color: var(--accent); 
   transition: box-shadow .1s ease;
 }
 .calendar-cell:hover{ box-shadow: var(--shadow-sm); }
+.calendar-created-dot{
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
 .calendar-cell.outside{ opacity: .38; }
 .calendar-cell.today{ border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .calendar-daynum{ font-size: 12.5px; font-weight: 650; }

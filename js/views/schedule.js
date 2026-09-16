@@ -105,9 +105,9 @@ export function openBlockModal(existing, defaults) {
     </div>
   `;
 
-  const startPicker = createTimePicker({ name: "start", value: minutesToTime(startMin), allowClear: false, minuteStep: 15 });
+  const startPicker = createTimePicker({ name: "start", value: minutesToTime(startMin), allowClear: false, minuteStep: 1 });
   form.querySelector('[data-slot="start"]').replaceWith(startPicker.el);
-  const endPicker = createTimePicker({ name: "end", value: minutesToTime(endMin), allowClear: false, minuteStep: 15 });
+  const endPicker = createTimePicker({ name: "end", value: minutesToTime(endMin), allowClear: false, minuteStep: 1 });
   form.querySelector('[data-slot="end"]').replaceWith(endPicker.el);
 
   openModal(existing ? "Editar actividad" : "Nueva actividad", form);

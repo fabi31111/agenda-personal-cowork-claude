@@ -2,7 +2,7 @@
 // dispositivo/SO, en vez de depender del picker nativo de Android/Windows/etc).
 
 import {
-  DOW_LABELS, MONTH_LABELS, toISODate, parseISODate, isoWeekday, todayISO,
+  DOW_LABELS, MONTH_LABELS, toISODate, parseISODate, isoWeekday, todayISO, escapeHtml,
 } from "./utils.js";
 
 let activePopover = null;
@@ -15,11 +15,12 @@ function closeActivePopover() {
   }
 }
 
-function openPopover(anchor, contentEl) {
+function openPopover(anchor, contentEl, { matchWidth } = {}) {
   closeActivePopover();
 
   const pop = document.createElement("div");
   pop.className = "dt-popover";
+  if (matchWidth) pop.style.width = `${anchor.getBoundingClientRect().width}px`;
   pop.appendChild(contentEl);
   document.body.appendChild(pop);
 
@@ -251,6 +252,64 @@ export function createTimePicker({ name, value = "", placeholder = "Seleccionar 
       hCol.querySelector(".selected")?.scrollIntoView({ block: "center" });
       mCol.querySelector(".selected")?.scrollIntoView({ block: "center" });
     });
+  });
+
+  return { el: wrap, setValue, getValue: () => hidden.value };
+}
+
+/**
+ * Selector desplegable propio (reemplaza un <select> nativo). `options` es
+ * un array de { value, label, dot? } — `dot` es un color opcional para
+ * mostrar un puntito antes de la etiqueta (por ej. el color del proyecto).
+ */
+export function createSelectPicker({ name, value = "", options, placeholder = "Seleccionar", onChange } = {}) {
+  const wrap = document.createElement("div");
+  wrap.className = "dt-field";
+  wrap.innerHTML = `
+    <input type="hidden" name="${name}" value="${value || ""}">
+    <button type="button" class="dt-input dt-select">
+      <span class="dt-select-content"></span>
+      <svg class="icon dt-select-chevron" style="width:15px;height:15px"><use href="#icon-chevron-down"/></svg>
+    </button>
+  `;
+  const hidden = wrap.querySelector("input[type=hidden]");
+  const contentEl = wrap.querySelector(".dt-select-content");
+  const btn = wrap.querySelector(".dt-input");
+
+  function findOption(v) {
+    return options.find((o) => String(o.value) === String(v));
+  }
+
+  function setValue(v, fireChange = true) {
+    hidden.value = v ?? "";
+    const opt = findOption(hidden.value);
+    if (opt) {
+      contentEl.innerHTML = `${opt.dot ? `<span class="dot" style="background:${opt.dot}"></span>` : ""}<span>${escapeHtml(opt.label)}</span>`;
+      contentEl.classList.remove("dt-placeholder");
+    } else {
+      contentEl.textContent = placeholder;
+      contentEl.classList.add("dt-placeholder");
+    }
+    if (fireChange) onChange?.(hidden.value);
+  }
+  setValue(value, false);
+
+  btn.addEventListener("click", () => {
+    const content = document.createElement("div");
+    content.className = "dt-select-list scrollbar-thin";
+    content.innerHTML = options.map((o) => `
+      <button type="button" class="dt-select-opt ${String(o.value) === String(hidden.value) ? "selected" : ""}" data-value="${o.value}">
+        ${o.dot ? `<span class="dot" style="background:${o.dot}"></span>` : ""}
+        <span>${escapeHtml(o.label)}</span>
+      </button>
+    `).join("");
+    content.querySelectorAll("[data-value]").forEach((optBtn) => {
+      optBtn.addEventListener("click", () => {
+        setValue(optBtn.dataset.value);
+        closeActivePopover();
+      });
+    });
+    openPopover(btn, content, { matchWidth: true });
   });
 
   return { el: wrap, setValue, getValue: () => hidden.value };
