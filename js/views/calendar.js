@@ -91,7 +91,7 @@ function renderGrid(gridEl, agendaEl) {
           ${shown.map((it) => `<div class="calendar-chip" style="${it.type === "event" ? `background:${colorFor(it.color)}22;color:${colorFor(it.color)}` : ""} ${it.done ? "text-decoration:line-through;opacity:.6" : ""}">${escapeHtml(it.label)}</div>`).join("")}
           ${extra > 0 ? `<div class="calendar-more">+${extra} más</div>` : ""}
         </div>
-        ${dayTasks.length ? `<div class="calendar-task-dots" title="${dayTasks.length} tarea(s) este día">${dayTasks.slice(0, 6).map((t) => `<span class="calendar-task-dot ${t.done ? "done" : ""}"></span>`).join("")}</div>` : ""}
+        ${items.length ? `<div class="calendar-dots" title="${items.length} elemento(s) este día">${items.slice(0, 8).map((it) => `<span class="calendar-mini-dot" style="background:${it.type === "event" ? colorFor(it.color) : "var(--accent)"}${it.done ? ";opacity:.35" : ""}"></span>`).join("")}</div>` : ""}
       </div>`;
   }
 
