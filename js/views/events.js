@@ -2,6 +2,7 @@ import { getState, addEvent, updateEvent, deleteEvent } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, PALETTE, colorFor, relativeDayLabel, todayISO } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
+import { LinkedNotesField, linkedNotesBadge } from "../linkedNotes.js";
 import { createDatePicker, createTimePicker } from "../pickers.js";
 
 let filter = "upcoming"; // upcoming | past | all
@@ -58,6 +59,7 @@ function renderList(listEl) {
           <span class="badge badge-accent">${relativeDayLabel(e.date)}${e.startTime ? " · " + e.startTime + (e.endTime ? "–" + e.endTime : "") : ""}</span>
           ${e.location ? `<span class="badge"><svg class="icon" style="width:12px;height:12px"><use href="#icon-location"/></svg> ${escapeHtml(e.location)}</span>` : ""}
           ${attachmentBadge(e.attachments)}
+          ${linkedNotesBadge(e.linkedNoteIds)}
         </div>
       </div>
       <div class="task-actions">
@@ -133,6 +135,9 @@ export function openEventModal(existing, prefillDate) {
   const endTimePicker = createTimePicker({ name: "endTime", value: existing?.endTime || "" });
   form.querySelector('[data-slot="endTime"]').replaceWith(endTimePicker.el);
 
+  const linkedNotesField = new LinkedNotesField({ noteIds: existing?.linkedNoteIds || [] });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", linkedNotesField.el);
+
   const attachField = new AttachmentsField({
     mode: existing ? "edit" : "create",
     attachments: existing?.attachments || [],
@@ -175,6 +180,7 @@ export function openEventModal(existing, prefillDate) {
       location: fd.get("location"),
       description: fd.get("description"),
       color: fd.get("color"),
+      linkedNoteIds: linkedNotesField.getIds(),
     };
     if (!data.title.trim() || !data.date) return;
     if (existing) {

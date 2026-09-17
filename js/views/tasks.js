@@ -2,10 +2,15 @@ import { getState, addTask, updateTask, deleteTask, toggleTask } from "../store.
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
 import { escapeHtml, todayISO, relativeDayLabel, isPast, PALETTE, colorFor } from "../utils.js";
 import { AttachmentsField, attachmentBadge } from "../attachments.js";
+import { LinkedNotesField, linkedNotesBadge } from "../linkedNotes.js";
 import { createDatePicker, createTimePicker, createSelectPicker } from "../pickers.js";
 
 let filter = "pending"; // all | pending | today | overdue | done
 let search = "";
+
+export function setTasksFilter(f) {
+  filter = f;
+}
 
 export function renderTasksView(container) {
   const state = getState();
@@ -122,6 +127,7 @@ function taskItemHtml(t, state) {
         ${priorityBadge}
         ${project ? `<span class="badge"><span class="dot" style="background:${colorFor(project.color)}"></span>${escapeHtml(project.name)}</span>` : ""}
         ${attachmentBadge(t.attachments)}
+        ${linkedNotesBadge(t.linkedNoteIds)}
       </div>
     </div>
     <div class="task-actions">
@@ -191,6 +197,9 @@ export function openTaskModal(existing, prefillDate) {
   });
   form.querySelector('[data-slot="projectId"]').replaceWith(projectPicker.el);
 
+  const linkedNotesField = new LinkedNotesField({ noteIds: existing?.linkedNoteIds || [] });
+  form.querySelector(".modal-footer").insertAdjacentElement("beforebegin", linkedNotesField.el);
+
   const attachField = new AttachmentsField({
     mode: existing ? "edit" : "create",
     attachments: existing?.attachments || [],
@@ -223,6 +232,7 @@ export function openTaskModal(existing, prefillDate) {
       dueTime: fd.get("dueTime") || null,
       priority: fd.get("priority"),
       projectId: fd.get("projectId") || null,
+      linkedNoteIds: linkedNotesField.getIds(),
     };
     if (!data.title.trim()) return;
     if (existing) {

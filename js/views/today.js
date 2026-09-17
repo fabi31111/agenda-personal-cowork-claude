@@ -8,6 +8,7 @@ import { openTaskModal } from "./tasks.js";
 import { openEventModal } from "./events.js";
 import { openBlockModal } from "./schedule.js";
 import { openNoteModal } from "./notes.js";
+import { navigateTo } from "../nav.js";
 
 export function renderTodayView(container) {
   const state = getState();
@@ -32,9 +33,9 @@ export function renderTodayView(container) {
     </div>
 
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-num">${todayTasks.length}</div><div class="stat-label">Tareas para hoy</div></div>
-      <div class="stat-card"><div class="stat-num">${overdueTasks.length}</div><div class="stat-label">Vencidas</div></div>
-      <div class="stat-card"><div class="stat-num">${todayEvents.length}</div><div class="stat-label">Eventos hoy</div></div>
+      <button type="button" class="stat-card stat-card-link" data-nav="tasks" data-nav-filter="today"><div class="stat-num">${todayTasks.length}</div><div class="stat-label">Tareas para hoy</div></button>
+      <button type="button" class="stat-card stat-card-link" data-nav="tasks" data-nav-filter="overdue"><div class="stat-num">${overdueTasks.length}</div><div class="stat-label">Vencidas</div></button>
+      <button type="button" class="stat-card stat-card-link" data-nav="events"><div class="stat-num">${todayEvents.length}</div><div class="stat-label">Eventos hoy</div></button>
       <div class="stat-card"><div class="stat-num">${pendingCount}</div><div class="stat-label">Pendientes totales</div></div>
     </div>
 
@@ -66,6 +67,10 @@ export function renderTodayView(container) {
       </div>
     </div>
   `;
+
+  container.querySelectorAll("[data-nav]").forEach((btn) => {
+    btn.addEventListener("click", () => navigateTo(btn.dataset.nav, { filter: btn.dataset.navFilter }));
+  });
 
   // Tareas
   const combinedTasks = [...overdueTasks.filter((t) => t.dueDate !== today), ...todayTasks];

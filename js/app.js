@@ -1,7 +1,7 @@
 import { getState, subscribe, seedIfEmpty } from "./store.js";
 import { qs, qsa, todayISO, isoWeekday, colorFor } from "./utils.js";
 import { renderTodayView } from "./views/today.js";
-import { renderTasksView, openTaskModal } from "./views/tasks.js";
+import { renderTasksView, openTaskModal, setTasksFilter } from "./views/tasks.js";
 import { renderProjectsView, openProjectModal } from "./views/projects.js";
 import { renderEventsView, openEventModal } from "./views/events.js";
 import { renderNotesView, openNoteModal } from "./views/notes.js";
@@ -84,6 +84,12 @@ qsa(".nav-item").forEach((btn) => {
   btn.addEventListener("click", () => switchView(btn.dataset.view));
 });
 qs("#settings-btn").addEventListener("click", openSettingsModal);
+
+document.addEventListener("app:navigate", (e) => {
+  const { view, filter } = e.detail || {};
+  if (view === "tasks" && filter) setTasksFilter(filter);
+  switchView(view);
+});
 
 subscribe(() => renderCurrentView());
 document.addEventListener("app:refresh", () => renderCurrentView());

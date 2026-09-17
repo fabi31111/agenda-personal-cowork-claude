@@ -1,28 +1,75 @@
 import { getState, addScheduleBlock, updateScheduleBlock, deleteScheduleBlock } from "../store.js";
 import { openModal, closeModal, showToast, confirmAction } from "../ui.js";
-import { escapeHtml, DOW_LABELS_FULL, PALETTE, colorFor, minutesToTime, timeToMinutes } from "../utils.js";
-import { createTimePicker } from "../pickers.js";
+import {
+  escapeHtml, DOW_LABELS, DOW_LABELS_FULL, MONTH_LABELS, PALETTE, colorFor,
+  minutesToTime, timeToMinutes, startOfWeek, addDays, toISODate, todayISO,
+} from "../utils.js";
+import { createTimePicker, createSelectPicker } from "../pickers.js";
 
 const START_HOUR = 6;
 const END_HOUR = 23; // exclusivo, última franja termina a las 23:00
 const ROWS = (END_HOUR - START_HOUR) * 2; // franjas de 30 min
 
+let weekOffset = 0;
+
+function getWeekStart() {
+  return addDays(startOfWeek(new Date()), weekOffset * 7);
+}
+
+function formatWeekRange(weekStart) {
+  const weekEnd = addDays(weekStart, 6);
+  if (weekStart.getMonth() === weekEnd.getMonth()) {
+    return `${weekStart.getDate()}–${weekEnd.getDate()} de ${MONTH_LABELS[weekStart.getMonth()].toLowerCase()}`;
+  }
+  return `${weekStart.getDate()} ${MONTH_LABELS[weekStart.getMonth()].slice(0, 3).toLowerCase()} – ${weekEnd.getDate()} ${MONTH_LABELS[weekEnd.getMonth()].slice(0, 3).toLowerCase()}`;
+}
+
 export function renderScheduleView(container) {
   container.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.innerHTML = `<div class="schedule-wrap scrollbar-thin"><div class="schedule-grid" id="schedule-grid"></div></div>`;
+  wrap.innerHTML = `
+    <div class="calendar-header">
+      <div class="calendar-title" id="week-title"></div>
+      <div class="calendar-nav">
+        <button class="icon-btn" id="week-prev"><svg class="icon"><use href="#icon-chevron-left"/></svg></button>
+        <button class="btn btn-sm" id="week-today">Esta semana</button>
+        <button class="icon-btn" id="week-next"><svg class="icon"><use href="#icon-chevron-right"/></svg></button>
+      </div>
+    </div>
+    <div class="schedule-wrap scrollbar-thin"><div class="schedule-grid" id="schedule-grid"></div></div>
+  `;
   container.appendChild(wrap);
-  renderGrid(wrap.querySelector("#schedule-grid"));
+
+  wrap.querySelector("#week-prev").addEventListener("click", () => {
+    weekOffset -= 1;
+    renderScheduleView(container);
+  });
+  wrap.querySelector("#week-next").addEventListener("click", () => {
+    weekOffset += 1;
+    renderScheduleView(container);
+  });
+  wrap.querySelector("#week-today").addEventListener("click", () => {
+    weekOffset = 0;
+    renderScheduleView(container);
+  });
+
+  const weekStart = getWeekStart();
+  wrap.querySelector("#week-title").textContent = formatWeekRange(weekStart);
+
+  renderGrid(wrap.querySelector("#schedule-grid"), weekStart);
 }
 
-function renderGrid(gridEl) {
+function renderGrid(gridEl, weekStart) {
   const state = getState();
+  const today = todayISO();
   gridEl.style.gridTemplateRows = `auto repeat(${ROWS}, 22px)`;
 
   let html = `<div class="schedule-corner"></div>`;
-  DOW_LABELS_FULL.forEach((d) => {
-    html += `<div class="schedule-dow">${d.slice(0, 3)}</div>`;
-  });
+  for (let d = 0; d < 7; d++) {
+    const dayDate = addDays(weekStart, d);
+    const isToday = toISODate(dayDate) === today;
+    html += `<div class="schedule-dow ${isToday ? "today" : ""}">${DOW_LABELS[d]} ${dayDate.getDate()}/${dayDate.getMonth() + 1}</div>`;
+  }
 
   for (let r = 0; r < ROWS; r++) {
     const rowLine = r + 2;
@@ -77,9 +124,7 @@ export function openBlockModal(existing, defaults) {
     </div>
     <div class="field">
       <label>Día</label>
-      <select name="day">
-        ${DOW_LABELS_FULL.map((d, i) => `<option value="${i}" ${day === i ? "selected" : ""}>${d}</option>`).join("")}
-      </select>
+      <div data-slot="day"></div>
     </div>
     <div class="field-row">
       <div class="field">
@@ -104,6 +149,13 @@ export function openBlockModal(existing, defaults) {
       <button type="submit" class="btn btn-primary">${existing ? "Guardar" : "Añadir"}</button>
     </div>
   `;
+
+  const dayPicker = createSelectPicker({
+    name: "day",
+    value: day,
+    options: DOW_LABELS_FULL.map((label, i) => ({ value: i, label })),
+  });
+  form.querySelector('[data-slot="day"]').replaceWith(dayPicker.el);
 
   const startPicker = createTimePicker({ name: "start", value: minutesToTime(startMin), allowClear: false, minuteStep: 1 });
   form.querySelector('[data-slot="start"]').replaceWith(startPicker.el);

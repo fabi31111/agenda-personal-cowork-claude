@@ -105,6 +105,7 @@ export function addTask(data) {
     priority: data.priority || "normal", // low | normal | high
     projectId: data.projectId || null,
     attachments: [],
+    linkedNoteIds: data.linkedNoteIds || [],
     createdAt: Date.now(),
   };
   state.tasks.push(task);
@@ -147,6 +148,7 @@ export function addEvent(data) {
     location: data.location?.trim() || "",
     color: data.color || "violet",
     attachments: [],
+    linkedNoteIds: data.linkedNoteIds || [],
     createdAt: Date.now(),
   };
   state.events.push(event);
@@ -205,6 +207,8 @@ export function deleteNote(id) {
   const n = state.notes.find((x) => x.id === id);
   (n?.attachments || []).forEach((a) => deleteFile(a.id));
   state.notes = state.notes.filter((n) => n.id !== id);
+  state.tasks.forEach((t) => { if (t.linkedNoteIds) t.linkedNoteIds = t.linkedNoteIds.filter((nid) => nid !== id); });
+  state.events.forEach((e) => { if (e.linkedNoteIds) e.linkedNoteIds = e.linkedNoteIds.filter((nid) => nid !== id); });
   notify();
 }
 
@@ -258,6 +262,23 @@ export function removeAttachmentMeta(kind, entityId, attachmentId) {
   if (!entity) return;
   entity.attachments = (entity.attachments || []).filter((a) => a.id !== attachmentId);
   deleteFile(attachmentId);
+  notify();
+}
+
+/* ---------------------------- Notas vinculadas ---------------------------- */
+
+export function addLinkedNote(kind, entityId, noteId) {
+  const entity = COLLECTIONS[kind]().find((x) => x.id === entityId);
+  if (!entity) return;
+  if (!entity.linkedNoteIds) entity.linkedNoteIds = [];
+  if (!entity.linkedNoteIds.includes(noteId)) entity.linkedNoteIds.push(noteId);
+  notify();
+}
+
+export function removeLinkedNote(kind, entityId, noteId) {
+  const entity = COLLECTIONS[kind]().find((x) => x.id === entityId);
+  if (!entity) return;
+  entity.linkedNoteIds = (entity.linkedNoteIds || []).filter((id) => id !== noteId);
   notify();
 }
 

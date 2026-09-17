@@ -7,7 +7,7 @@ import {
 
 let activePopover = null;
 
-function closeActivePopover() {
+export function closeActivePopover() {
   if (activePopover) {
     const p = activePopover;
     activePopover = null;
@@ -15,7 +15,7 @@ function closeActivePopover() {
   }
 }
 
-function openPopover(anchor, contentEl, { matchWidth } = {}) {
+export function openPopover(anchor, contentEl, { matchWidth } = {}) {
   closeActivePopover();
 
   const pop = document.createElement("div");
