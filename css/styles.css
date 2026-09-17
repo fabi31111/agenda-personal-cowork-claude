@@ -665,10 +665,14 @@ input[type="checkbox"]{ width: 18px; height: 18px; accent-color: var(--accent); 
 }
 .calendar-more{ font-size: 10.5px; color: var(--text-faint); }
 
+.calendar-task-dots{ display: none; gap: 3px; flex-wrap: wrap; margin-top: auto; }
+.calendar-task-dot{ width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.calendar-task-dot.done{ opacity: .35; }
+
 @media (max-width: 880px){
   .calendar-cell{ min-height: 62px; padding: 4px; }
-  .calendar-chip{ display: none; }
-  .calendar-cell .dot-row{ display: flex; gap: 2px; flex-wrap: wrap; }
+  .calendar-chip, .calendar-more{ display: none; }
+  .calendar-task-dots{ display: flex; }
 }
 
 .calendar-agenda{ margin-top: 16px; }
